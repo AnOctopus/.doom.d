@@ -6,8 +6,8 @@
 
 ;; Some functionality uses this to identify you, e.g. GPG configuration, email
 ;; clients, file templates and snippets.
-(setq user-full-name "John Doe"
-      user-mail-address "john@doe.com")
+(setq user-full-name "Amanda Walker"
+      user-mail-address "amanda@amandawalker.io")
 
 ;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
 ;; are the three important ones:
@@ -21,7 +21,7 @@
 ;; font string. You generally only need these two:
 ;; (setq doom-font (font-spec :family "monospace" :size 12 :weight 'semi-light)
 ;;       doom-variable-pitch-font (font-spec :family "sans" :size 13))
-(setq doom-font "Source Code Pro-18")
+(setq doom-font "Source Code Pro-16")
 
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
@@ -54,15 +54,16 @@
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
 (setq evil-move-cursor-back nil)
+(setq +evil-want-o/O-to-continue-comments nil)
 (after! evil-snipe (evil-snipe-mode -1))
 (map! :v "s" 'evil-surround-region
       :n "s" 'evil-surround-edit)
 (map! :map helm-find-files-map
       "C-h" 'helm-find-files-up-one-level)
 
-(setq helm-M-x-fuzzy-match t
-      helm-buffers-fuzzy-matching t
-      helm-recentf-fuzzy-match t)
+(after! smartparens
+  (sp-local-pair '(python-mode) "f\"" "\"")
+  (sp-local-pair '(python-mode) "f'" "'"))
 
 (defun spacemacs/alternate-buffer (&optional window)
   "Switch back and forth between current and last buffer in the
@@ -82,3 +83,10 @@ the current layouts buffers."
 (add-hook 'flycheck-error-list-mode-hook
     (lambda ()
         (visual-line-mode 1)))
+
+(after! lsp-haskell
+  (setq lsp-haskell-completion-snippets-on nil))
+
+;; lsp formatting conflicts with prettier formatting in streamlit
+(setq-hook! 'typescript-mode-hook +format-with-lsp nil)
+
