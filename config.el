@@ -21,7 +21,8 @@
 ;; font string. You generally only need these two:
 ;; (setq doom-font (font-spec :family "monospace" :size 12 :weight 'semi-light)
 ;;       doom-variable-pitch-font (font-spec :family "sans" :size 13))
-(setq doom-font "Source Code Pro-16")
+;; (setq doom-font "Source Code Pro-14")
+(setq doom-font "Berkeley Mono-14")
 
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
@@ -60,10 +61,13 @@
       :n "s" 'evil-surround-edit)
 (map! :map helm-find-files-map
       "C-h" 'helm-find-files-up-one-level)
+(map! :map ivy-minibuffer-map
+      "C-j" #'next-line
+      "C-k" #'previous-line)
 
-(after! smartparens
-  (sp-local-pair '(python-mode) "f\"" "\"")
-  (sp-local-pair '(python-mode) "f'" "'"))
+;; (after! smartparens
+;;   (sp-local-pair '(python-mode) "f\"" "\"")
+;;   (sp-local-pair '(python-mode) "f'" "'"))
 
 (defun spacemacs/alternate-buffer (&optional window)
   "Switch back and forth between current and last buffer in the
@@ -73,20 +77,57 @@ If `spacemacs-layouts-restrict-spc-tab' is `t' then this only switches between
 the current layouts buffers."
   (interactive)
   (cl-destructuring-bind (buf start pos)
-        (or (cl-find (window-buffer window) (window-prev-buffers)
-                     :key #'car :test-not #'eq)
-            (list (other-buffer) nil nil))
+      (or (cl-find (window-buffer window) (window-prev-buffers)
+                   :key #'car :test-not #'eq)
+          (list (other-buffer) nil nil))
     (if (not buf)
         (message "Last buffer not found.")
       (set-window-buffer-start-and-point window buf start pos))))
 (map! :leader "<tab>" #'spacemacs/alternate-buffer)
 (add-hook 'flycheck-error-list-mode-hook
-    (lambda ()
-        (visual-line-mode 1)))
+          (lambda ()
+            (visual-line-mode 1)))
 
 (after! lsp-haskell
   (setq lsp-haskell-completion-snippets-on nil))
 
-;; lsp formatting conflicts with prettier formatting in streamlit
-(setq-hook! 'typescript-mode-hook +format-with-lsp nil)
+;; Clear lsp session workspace each time it starts up, so it doesn't accidentally accumulate every project I navigate to
+(advice-add 'lsp :before (lambda (&rest _args) (eval '(setf (lsp-session-server-id->folders (lsp-session)) (ht)))))
 
+;; lsp formatting conflicts with prettier formatting in streamlit
+;; (setq-hook! 'typescript-mode-hook +format-with-lsp nil)
+(setq +format-with-lsp nil)
+
+;; Works but is hardcoded
+(after! dap-mode
+  (setq dap-python-debugger 'debugpy
+        dap-python-executable (expand-file-name "~/streamlit/streamlit/.venv/bin/python"))
+  (defun dap-python--pyenv-executable-find (command)
+    command)
+  (dap-register-debug-template
+   "streamlit"
+   (list :type "python"
+         :env `(("DEBUG" . "1")
+                ("DEBUGPY_LOG_DIR" . ,(expand-file-name "~/streamlit/streamlit/log"))
+                )
+         :request "launch"
+         :program (expand-file-name "~/streamlit/streamlit/.venv/bin/streamlit")
+         :args `("run" ,(expand-file-name "~/streamlit/streamlit/test-scripts/7556.py"))
+         :logToFile 't
+         ))
+
+  ;; attach version
+  (dap-register-debug-template
+   "attach to streamlit debug"
+   (list :type "python"
+         :cwd nil
+         :env '(("DEBUG" . "1"))
+         :request "attach"
+         :name "streamlit attach"
+         :logToFile 't
+         ))
+  )
+
+
+;; (after! lsp-mode
+;;   (setq lsp-log-io 't))
